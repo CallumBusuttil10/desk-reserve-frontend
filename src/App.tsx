@@ -6,7 +6,6 @@ import {
 } from '@mui/material'
 import DeskIcon from '@mui/icons-material/Desk'
 
-// 1. TypeScript Interface (Same as before)
 interface Workspace {
   id: number;
   name: string;
@@ -21,7 +20,6 @@ function App() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 2. Fetch Data
   useEffect(() => {
     axios.get<Workspace[]>('http://127.0.0.1:8000/api/workspaces/')
       .then(response => {
@@ -35,7 +33,6 @@ function App() {
       })
   }, [])
 
-  // 3. Loading & Error States using MUI
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
       <CircularProgress />
@@ -48,10 +45,8 @@ function App() {
     </Box>
   )
 
-  // 4. The Polished MUI Interface
   return (
     <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', minHeight: '100vh', pb: 5 }}>
-      {/* Enterprise Navigation Bar */}
       <AppBar position="static" elevation={0} sx={{ bgcolor: '#1976d2', mb: 4 }}>
         <Toolbar>
           <DeskIcon sx={{ mr: 2 }} />
@@ -62,7 +57,6 @@ function App() {
         </Toolbar>
       </AppBar>
 
-      {/* Main Content Container */}
       <Container maxWidth="lg">
         <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="text.primary">
           Available Workspaces
@@ -71,10 +65,9 @@ function App() {
           Select a desk or meeting room to view availability and book your slot.
         </Typography>
 
-        {/* Responsive Grid for Cards */}
         <Grid container spacing={3}>
           {workspaces.map(workspace => (
-            <Grid item xs={12} sm={6} md={4} key={workspace.id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={workspace.id}>
               <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
