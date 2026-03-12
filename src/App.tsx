@@ -1,34 +1,115 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
+import {
+  AppBar, Toolbar, Typography, Container, Grid, Card,
+  CardContent, CardActions, Button, CircularProgress, Box, Chip
+} from '@mui/material'
+import DeskIcon from '@mui/icons-material/Desk'
+
+// 1. TypeScript Interface (Same as before)
+interface Workspace {
+  id: number;
+  name: string;
+  resource_type: string;
+  capacity: number;
+  is_active: boolean;
+  image_url?: string | null;
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
+  // 2. Fetch Data
+  useEffect(() => {
+    axios.get<Workspace[]>('http://127.0.0.1:8000/api/workspaces/')
+      .then(response => {
+        setWorkspaces(response.data)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error("Error fetching data:", err)
+        setError("Could not connect to the backend.")
+        setLoading(false)
+      })
+  }, [])
+
+  // 3. Loading & Error States using MUI
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <CircularProgress />
+    </Box>
+  )
+
+  if (error) return (
+    <Box display="flex" justifyContent="center" mt={5}>
+      <Typography color="error" variant="h5">{error}</Typography>
+    </Box>
+  )
+
+  // 4. The Polished MUI Interface
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', minHeight: '100vh', pb: 5 }}>
+      {/* Enterprise Navigation Bar */}
+      <AppBar position="static" elevation={0} sx={{ bgcolor: '#1976d2', mb: 4 }}>
+        <Toolbar>
+          <DeskIcon sx={{ mr: 2 }} />
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+            DeskReserve
+          </Typography>
+          <Button color="inherit">Login</Button>
+        </Toolbar>
+      </AppBar>
+
+      {/* Main Content Container */}
+      <Container maxWidth="lg">
+        <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="text.primary">
+          Available Workspaces
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 4 }}>
+          Select a desk or meeting room to view availability and book your slot.
+        </Typography>
+
+        {/* Responsive Grid for Cards */}
+        <Grid container spacing={3}>
+          {workspaces.map(workspace => (
+            <Grid item xs={12} sm={6} md={4} key={workspace.id}>
+              <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                    <Typography variant="h6" component="h2" fontWeight="bold">
+                      {workspace.name}
+                    </Typography>
+                    {workspace.is_active ? (
+                      <Chip label="Available" color="success" size="small" />
+                    ) : (
+                      <Chip label="Offline" color="error" size="small" />
+                    )}
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" mb={1}>
+                    <strong>Type:</strong> {workspace.resource_type}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Capacity:</strong> {workspace.capacity} {workspace.capacity > 1 ? 'People' : 'Person'}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ p: 2, pt: 0 }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    disabled={!workspace.is_active}
+                    disableElevation
+                  >
+                    Book Resource
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
   )
 }
 
