@@ -1,44 +1,44 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react'
+import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 import {
-  AppBar, Toolbar, Typography, Container, Box, Card,
-  CardContent, Button, CircularProgress, Chip, Grid,
-  Snackbar, Alert
-} from '@mui/material';
-import DeskIcon from '@mui/icons-material/Desk';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { jwtDecode } from 'jwt-decode';
+  AppBar, Toolbar, Typography, Container, Card,
+  CardContent, CardActions, Button, CircularProgress, Box, Chip,
+  Grid, CardMedia, Divider, IconButton, Alert, Snackbar,
+  Paper
+} from '@mui/material'
+import CorporateFareIcon from '@mui/icons-material/CorporateFare'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import LocationOnIcon from '@mui/icons-material/LocationOn'
+import dayjs from 'dayjs'
+
+interface Workspace {
+  id: number;
+  name: string;
+  resource_type: string;
+  floor: number;
+  image?: string | null;
+}
 
 interface Booking {
   id: number;
   workspace: number;
+  workspace_details?: Workspace;
   booking_date: string;
   start_time: string;
   end_time: string;
   status: string;
 }
 
-interface Workspace {
-  id: number;
-  name: string;
-}
-
-interface MyToken {
-  user_id: number;
-  exp: number;
-}
-
 function MyBookings() {
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [feedbackMsg, setFeedbackMsg] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [feedback, setFeedback] = useState<string | null>(null)
 
   const token = localStorage.getItem('access_token');
-  const username = localStorage.getItem('username');
 
   useEffect(() => {
     if (!token) {
@@ -46,159 +46,106 @@ function MyBookings() {
       return;
     }
 
-    const decodedToken = jwtDecode<MyToken>(token);
-    const userId = decodedToken.user_id;
+    const fetchData = async () => {
+      try {
+        const config = { headers: { Authorization: `Bearer ${token}` } };
 
-    const config = {
-      headers: { Authorization: `Bearer ${token}` }
+        // Fetch bookings and workspaces
+        const [bookingsRes, workspacesRes] = await Promise.all([
+          axios.get('http://127.0.0.1:8000/api/bookings/', config),
+          axios.get('http://127.0.0.1:8000/api/workspaces/')
+        ]);
+
+        const enrichedBookings = bookingsRes.data.map((booking: Booking) => ({
+          ...booking,
+          workspace_details: workspacesRes.data.find((w: Workspace) => w.id === booking.workspace)
+        }));
+
+        setBookings(enrichedBookings);
+      } catch (err: any) {
+        console.error("Error fetching bookings:", err);
+        if (err.response?.status === 401) {
+            localStorage.clear();
+            navigate('/login');
+        }
+      } finally {
+        setLoading(false);
+      }
     };
 
-    Promise.all([
-      axios.get<Booking[]>(`http://127.0.0.1:8000/api/bookings/user/${userId}/`, config),
-      axios.get<Workspace[]>('http://127.0.0.1:8000/api/workspaces/')
-    ])
-      .then(([bookingsResponse, workspacesResponse]) => {
-        setBookings(bookingsResponse.data);
-        setWorkspaces(workspacesResponse.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching data:", err);
-        setError("Could not load your bookings.");
-        setLoading(false);
-      });
-  }, [navigate, token]);
+    fetchData();
+  }, [token, navigate]);
 
-  const handleCancelBooking = (bookingId: number) => {
-    if (!token) return;
+  const getImageUrl = (workspace?: Workspace) => {
+    if (!workspace) return "";
+    switch (workspace.resource_type) {
+      case 'Boardroom': return "https://res.cloudinary.com/dwtbxefd8/image/upload/v1774356998/workspaces/Boardroom_viyh2k.png";
+      case 'Desk': return "https://res.cloudinary.com/dwtbxefd8/image/upload/v1774356795/workspaces/standingdesk_inl2nr.png";
+      case 'Focus Pod': return "https://res.cloudinary.com/dwtbxefd8/image/upload/v1774356962/workspaces/FocusPod_zyxfdt.png";
+      default: return "";
+    }
+  }
 
-    const config = {
+  const handleCancel = (id: number) => {
+    if (!window.confirm("Cancel this booking?")) return;
+    axios.delete(`http://127.0.0.1:8000/api/bookings/${id}/delete/`, {
       headers: { Authorization: `Bearer ${token}` }
-    };
-
-    axios.patch(`http://127.0.0.1:8000/api/bookings/${bookingId}/cancel/`, {}, config)
+    })
       .then(() => {
-        setFeedbackMsg({ type: 'success', text: 'Booking successfully cancelled.' });
-        setBookings(prevBookings =>
-          prevBookings.map(b => b.id === bookingId ? { ...b, status: 'Cancelled' } : b)
-        );
+        setBookings(bookings.filter(b => b.id !== id));
+        setFeedback("Booking cancelled.");
       })
-      .catch(err => {
-        console.error("Cancel failed:", err);
-        setFeedbackMsg({ type: 'error', text: 'Failed to cancel the booking.' });
-      });
+      .catch(err => console.error(err));
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
-  };
-
-  const getWorkspaceName = (workspaceId: number) => {
-    const workspace = workspaces.find(w => w.id === workspaceId);
-    return workspace ? workspace.name : `Workspace #${workspaceId}`;
-  };
-
-  if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-      <CircularProgress />
-    </Box>
-  );
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>
 
   return (
-    <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', minHeight: '100vh', pb: 5 }}>
-      <AppBar position="static" elevation={0} sx={{ bgcolor: '#1976d2', mb: 4 }}>
+    <Box sx={{ flexGrow: 1, bgcolor: '#f8fafc', minHeight: '100vh' }}>
+      <AppBar position="static" elevation={0}>
         <Toolbar>
-          <DeskIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            DeskReserve
-          </Typography>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Button color="inherit" onClick={() => navigate('/')} startIcon={<ArrowBackIcon />}>
-              Dashboard
-            </Button>
-            <Typography variant="body2">Hello, {username}</Typography>
-            <Button color="inherit" onClick={handleLogout} variant="outlined">Logout</Button>
-          </Box>
+          <IconButton color="inherit" onClick={() => navigate('/')} sx={{ mr: 2 }}><ArrowBackIcon /></IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold' }}>MY RESERVATIONS</Typography>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="md">
-        <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="text.primary">
-          My Bookings
-        </Typography>
-
-        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-
-        {bookings.length === 0 && !error ? (
-          <Box textAlign="center" py={5} bgcolor="white" borderRadius={2} boxShadow={1}>
-            <Typography variant="h6" color="text.secondary">
-              You don't have any bookings yet.
-            </Typography>
-            <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/')}>
-              Book a Workspace
-            </Button>
-          </Box>
+      <Container maxWidth="lg" sx={{ py: 6 }}>
+        {bookings.length === 0 ? (
+          <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 3 }}>
+            <Typography variant="h6">No active bookings.</Typography>
+            <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/')}>Go to Dashboard</Button>
+          </Paper>
         ) : (
           <Grid container spacing={3}>
             {bookings.map(booking => (
-              <Grid size={{ xs: 12 }} key={booking.id}>
-                <Card elevation={2} sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                      <Typography variant="h6" fontWeight="bold">
-                        {getWorkspaceName(booking.workspace)}
-                      </Typography>
-                      <Chip
-                        label={booking.status}
-                        color={booking.status === 'Confirmed' ? 'success' : 'default'}
-                        size="small"
-                        sx={{ fontWeight: 'bold' }}
-                      />
-                    </Box>
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="body2" color="text.secondary">Date</Typography>
-                        <Typography variant="body1">{booking.booking_date}</Typography>
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="body2" color="text.secondary">Time</Typography>
-                        <Typography variant="body1">
-                          {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
-                        </Typography>
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 4 }} display="flex" alignItems="center" justifyContent="flex-end">
-                        {booking.status === 'Confirmed' && (
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            onClick={() => handleCancelBooking(booking.id)}
-                          >
-                            Cancel Booking
-                          </Button>
-                        )}
-                      </Grid>
-                    </Grid>
-                  </CardContent>
+              <Grid item xs={12} md={6} key={booking.id}>
+                <Card sx={{ display: 'flex', borderRadius: 4, height: '100%' }}>
+                  <CardMedia
+                    component="img"
+                    sx={{ width: 140, display: { xs: 'none', sm: 'block' } }}
+                    image={getImageUrl(booking.workspace_details)}
+                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                    <CardContent>
+                      <Typography variant="h6" fontWeight="bold">{booking.workspace_details?.name || 'Workspace'}</Typography>
+                      <Typography variant="body2" color="text.secondary">Floor {booking.workspace_details?.floor}</Typography>
+                      <Divider sx={{ my: 1 }} />
+                      <Typography variant="body2"><strong>Date:</strong> {booking.booking_date}</Typography>
+                      <Typography variant="body2"><strong>Time:</strong> {booking.start_time.substring(0,5)} - {booking.end_time.substring(0,5)}</Typography>
+                    </CardContent>
+                    <CardActions><Button color="error" size="small" onClick={() => handleCancel(booking.id)}>Cancel</Button></CardActions>
+                  </Box>
                 </Card>
               </Grid>
             ))}
           </Grid>
         )}
       </Container>
-
-      <Snackbar
-        open={!!feedbackMsg}
-        autoHideDuration={6000}
-        onClose={() => setFeedbackMsg(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setFeedbackMsg(null)} severity={feedbackMsg?.type || 'info'} sx={{ width: '100%' }}>
-          {feedbackMsg?.text}
-        </Alert>
+      <Snackbar open={!!feedback} autoHideDuration={3000} onClose={() => setFeedback(null)}>
+        <Alert severity="success">{feedback}</Alert>
       </Snackbar>
     </Box>
-  );
+  )
 }
 
-export default MyBookings;
+export default MyBookings

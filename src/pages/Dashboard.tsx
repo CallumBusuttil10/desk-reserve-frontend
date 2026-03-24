@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import {
-  AppBar, Toolbar, Typography, Container, Grid, Card,
+  AppBar, Toolbar, Typography, Container, Card,
   CardContent, CardActions, Button, CircularProgress, Box, Chip,
   Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert,
-  TextField, InputAdornment, MenuItem
+  TextField, MenuItem, CardMedia, Grid, Paper, Divider
 } from '@mui/material'
-import DeskIcon from '@mui/icons-material/Desk'
-import SearchIcon from '@mui/icons-material/Search'
+import CorporateFareIcon from '@mui/icons-material/CorporateFare'
+import LocationOnIcon from '@mui/icons-material/LocationOn'
+import PeopleIcon from '@mui/icons-material/People'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -21,9 +22,10 @@ interface Workspace {
   id: number;
   name: string;
   resource_type: string;
+  floor: number;
   capacity: number;
   is_active: boolean;
-  image_url?: string | null;
+  image?: string | null;
 }
 
 interface MyToken {
@@ -37,11 +39,12 @@ function Dashboard() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Search and Filter State
-  const [searchQuery, setSearchQuery] = useState('')
-  const [resourceFilter, setResourceFilter] = useState('All')
+  // SEARCH FLOW STATE
+  const [hasSearched, setHasSearched] = useState(false);
+  const [selectedFloor, setSelectedFloor] = useState<number | 'all'>('all');
+  const [resourceFilter, setResourceFilter] = useState('All');
 
-  // Modal & Booking State
+  // MODAL & BOOKING STATE
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [bookingDate, setBookingDate] = useState<Dayjs | null>(dayjs())
@@ -65,30 +68,31 @@ function Dashboard() {
       })
   }, [])
 
-  const handleOpenModal = (workspace: Workspace) => {
-    if (!token) {
-      navigate('/login');
-      return;
+  // --- HARDCODED IMAGE LOGIC ---
+  const getImageUrl = (workspace: Workspace) => {
+    if (workspace.image) return workspace.image;
+
+    switch (workspace.resource_type) {
+      case 'Boardroom':
+        return "https://res.cloudinary.com/dwtbxefd8/image/upload/v1774356998/workspaces/Boardroom_viyh2k.png";
+      case 'Desk':
+        return "https://res.cloudinary.com/dwtbxefd8/image/upload/v1774356795/workspaces/standingdesk_inl2nr.png";
+      case 'Focus Pod':
+        return "https://res.cloudinary.com/dwtbxefd8/image/upload/v1774356962/workspaces/FocusPod_zyxfdt.png";
+      default:
+        return "";
     }
-    setSelectedWorkspace(workspace)
-    setModalOpen(true)
-  }
-
-  const handleCloseModal = () => {
-    setModalOpen(false)
-    setSelectedWorkspace(null)
-  }
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
   }
 
   const handleBookSubmit = () => {
     if (!selectedWorkspace || !bookingDate || !startTime || !endTime || !token) return;
 
-    const decodedToken = jwtDecode<MyToken>(token);
+    if (endTime.isBefore(startTime) || endTime.isSame(startTime)) {
+        setFeedbackMsg({ type: 'error', text: 'End time must be after start time.' });
+        return;
+    }
 
+    const decodedToken = jwtDecode<MyToken>(token);
     const payload = {
       user: decodedToken.user_id,
       workspace: selectedWorkspace.id,
@@ -98,200 +102,199 @@ function Dashboard() {
       status: 'Confirmed'
     }
 
-    const config = {
+    axios.post('http://127.0.0.1:8000/api/bookings/create/', payload, {
       headers: { Authorization: `Bearer ${token}` }
-    };
-
-    axios.post('http://127.0.0.1:8000/api/bookings/create/', payload, config)
+    })
       .then(() => {
-        setFeedbackMsg({ type: 'success', text: 'Booking confirmed successfully!' })
-        handleCloseModal()
+        setFeedbackMsg({ type: 'success', text: 'Booking successful! Confirmation email arriving soon.' })
+        setModalOpen(false)
       })
       .catch(err => {
-        const errorText = err.response?.data?.non_field_errors?.[0] || "Failed to create booking."
-        setFeedbackMsg({ type: 'error', text: errorText })
+        const msg = err.response?.data?.[0] || "This slot is already taken. Try another time.";
+        setFeedbackMsg({ type: 'error', text: msg })
       })
   }
 
-  // Dynamic Filtering Logic
-  const uniqueResourceTypes = ['All', ...Array.from(new Set(workspaces.map(w => w.resource_type)))];
-
-  const filteredWorkspaces = workspaces.filter(workspace => {
-    const matchesSearch = workspace.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = resourceFilter === 'All' || workspace.resource_type === resourceFilter;
-    return matchesSearch && matchesType;
+  const filteredWorkspaces = workspaces.filter(w => {
+    const matchesFloor = selectedFloor === 'all' || String(w.floor) === String(selectedFloor);
+    const matchesType = resourceFilter === 'All' || w.resource_type === resourceFilter;
+    return matchesFloor && matchesType;
   });
 
-  if (loading) return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-      <CircularProgress />
-    </Box>
-  )
-
-  if (error) return (
-    <Box display="flex" justifyContent="center" mt={5}>
-      <Typography color="error" variant="h5">{error}</Typography>
-    </Box>
-  )
+  if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh"><CircularProgress /></Box>
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en-gb">
-      <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', minHeight: '100vh', pb: 5 }}>
+      <Box sx={{ flexGrow: 1, bgcolor: '#f8fafc', minHeight: '100vh' }}>
 
-        <AppBar position="static" elevation={0} sx={{ bgcolor: '#1976d2', mb: 4 }}>
+        <AppBar position="sticky" elevation={0} sx={{ bgcolor: '#1976d2' }}>
           <Toolbar>
-            <DeskIcon sx={{ mr: 2 }} />
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-              DeskReserve
-            </Typography>
-            {token ? (
+            <CorporateFareIcon sx={{ mr: 2 }} />
+            <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 'bold', letterSpacing: 1 }}>DESKRESERVE</Typography>
+            {token && (
               <Box display="flex" alignItems="center" gap={2}>
-                {/* NEW: My Bookings Navigation Button */}
-                <Button color="inherit" onClick={() => navigate('/bookings')}>
-                  My Bookings
-                </Button>
-                <Typography variant="body2">Hello, {username}</Typography>
-                <Button color="inherit" onClick={handleLogout} variant="outlined">Logout</Button>
+                <Button color="inherit" onClick={() => navigate('/bookings')}>My Bookings</Button>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>{username}</Typography>
+                <Button color="inherit" variant="outlined" size="small" onClick={() => { localStorage.clear(); navigate('/login'); }}>Logout</Button>
               </Box>
-            ) : (
-              <Button color="inherit" onClick={() => navigate('/login')}>Login</Button>
             )}
           </Toolbar>
         </AppBar>
 
-        <Container maxWidth="lg">
-          <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="text.primary">
-            Available Workspaces
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
-            Select a desk or meeting room to view availability and book your slot.
-          </Typography>
-
-          {/* Search and Filter Bar */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
-            <TextField
-              label="Search by name..."
-              variant="outlined"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ flexGrow: 1, minWidth: '250px', bgcolor: 'white', borderRadius: 1 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
+        <Container maxWidth="lg" sx={{ py: 8 }}>
+          {!hasSearched ? (
+            /* --- STEP 1: SEARCH HERO (CENTERED) --- */
+            <Box
+              textAlign="center"
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '60vh'
               }}
-            />
-            <TextField
-              select
-              label="Resource Type"
-              value={resourceFilter}
-              onChange={(e) => setResourceFilter(e.target.value)}
-              sx={{ minWidth: '200px', bgcolor: 'white', borderRadius: 1 }}
             >
-              {uniqueResourceTypes.map(type => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Box>
-
-          {filteredWorkspaces.length === 0 ? (
-            <Box textAlign="center" py={5}>
-              <Typography variant="h6" color="text.secondary">
-                No workspaces match your search criteria.
+              <Typography variant="h3" fontWeight="900" gutterBottom color="primary.main">
+                Ready to work?
               </Typography>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 6 }}>
+                Secure your desk or boardroom across 4 floors of prime office space.
+              </Typography>
+
+              <Paper elevation={4} sx={{ p: 4, borderRadius: 3, width: '100%', maxWidth: '900px', mx: 'auto' }}>
+                <Grid container spacing={2} justifyContent="center" alignItems="center">
+                  <Grid item xs={12} md={4.5}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Select Floor"
+                      value={selectedFloor}
+                      onChange={(e) => setSelectedFloor(e.target.value as any)}
+                    >
+                      <MenuItem value="all">Any Floor</MenuItem>
+                      <MenuItem value={1}>Floor 1 (Ground)</MenuItem>
+                      <MenuItem value={2}>Floor 2</MenuItem>
+                      <MenuItem value={3}>Floor 3</MenuItem>
+                      <MenuItem value={4}>Floor 4</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} md={4.5}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Resource Type"
+                      value={resourceFilter}
+                      onChange={(e) => setResourceFilter(e.target.value)}
+                    >
+                      <MenuItem value="All">All Types</MenuItem>
+                      <MenuItem value="Desk">Desk</MenuItem>
+                      <MenuItem value="Focus Pod">Focus Pod</MenuItem>
+                      <MenuItem value="Boardroom">Boardroom</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      size="large"
+                      sx={{ height: 56, fontWeight: 'bold' }}
+                      onClick={() => setHasSearched(true)}
+                    >
+                      SEARCH SPACES
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Paper>
             </Box>
           ) : (
-            <Grid container spacing={3}>
-              {filteredWorkspaces.map(workspace => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={workspace.id}>
-                  <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                        <Typography variant="h6" component="h2" fontWeight="bold">
-                          {workspace.name}
-                        </Typography>
-                        {workspace.is_active ? (
-                          <Chip label="Available" color="success" size="small" />
-                        ) : (
-                          <Chip label="Offline" color="error" size="small" />
-                        )}
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" mb={1}>
-                        <strong>Type:</strong> {workspace.resource_type}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Capacity:</strong> {workspace.capacity} {workspace.capacity > 1 ? 'People' : 'Person'}
-                      </Typography>
-                    </CardContent>
-                    <CardActions sx={{ p: 2, pt: 0 }}>
-                      <Button
-                        variant="contained"
-                        fullWidth
-                        disabled={!workspace.is_active}
-                        disableElevation
-                        onClick={() => handleOpenModal(workspace)}
-                      >
-                        Book Resource
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+            /* --- STEP 2: RESULTS GRID --- */
+            <Box>
+              <Box display="flex" justifyContent="space-between" alignItems="flex-end" mb={6}>
+                <Box>
+                  <Typography variant="h4" fontWeight="bold">
+                    Floor {selectedFloor === 'all' ? 'All' : selectedFloor} Results
+                  </Typography>
+                  <Typography color="text.secondary">
+                    {filteredWorkspaces.length} {resourceFilter === 'All' ? 'Spaces' : resourceFilter + 's'} found
+                  </Typography>
+                </Box>
+                <Button variant="outlined" onClick={() => setHasSearched(false)} sx={{ borderRadius: 2 }}>
+                  Modify Search
+                </Button>
+              </Box>
+
+              <Grid container spacing={4}>
+                {filteredWorkspaces.map(workspace => (
+                  <Grid item xs={12} sm={6} md={3} key={workspace.id}>
+                    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, transition: '0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 6 } }}>
+                      <CardMedia
+                        component="img"
+                        height="200"
+                        image={getImageUrl(workspace)}
+                        alt={workspace.name}
+                        sx={{ objectFit: 'cover' }}
+                      />
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                             <Typography variant="overline" color="primary" fontWeight="bold">Floor {workspace.floor}</Typography>
+                             <Chip label={workspace.resource_type} size="small" variant="outlined" />
+                        </Box>
+                        <Typography variant="h6" fontWeight="bold" sx={{ mt: 1 }}>{workspace.name}</Typography>
+                      </CardContent>
+                      <CardActions sx={{ p: 2 }}>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            disableElevation
+                            onClick={() => { setSelectedWorkspace(workspace); setModalOpen(true); }}
+                            sx={{ borderRadius: 2, py: 1 }}
+                        >
+                          Book Now
+                        </Button>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
           )}
         </Container>
 
-        <Dialog open={modalOpen} onClose={handleCloseModal} fullWidth maxWidth="sm">
-          <DialogTitle fontWeight="bold">
-            Book {selectedWorkspace?.name}
+        <Dialog open={modalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth="xs">
+          <DialogTitle sx={{ fontWeight: 'bold', pb: 0 }}>
+             Reserve {selectedWorkspace?.name}
           </DialogTitle>
-          <DialogContent>
-            <Box display="flex" flexDirection="column" gap={3} mt={1}>
-              <DatePicker
-                label="Date"
-                value={bookingDate}
-                onChange={(newValue) => setBookingDate(newValue)}
-                disablePast
-              />
-              <Box display="flex" gap={2}>
-                <TimePicker
-                  label="Start Time"
-                  value={startTime}
-                  onChange={(newValue) => setStartTime(newValue)}
-                  sx={{ flex: 1 }}
-                />
-                <TimePicker
-                  label="End Time"
-                  value={endTime}
-                  onChange={(newValue) => setEndTime(newValue)}
-                  sx={{ flex: 1 }}
-                />
+          <Box px={3} pb={2}>
+              <Box display="flex" gap={2} mt={1}>
+                <Box display="flex" alignItems="center" gap={0.5} color="text.secondary">
+                    <LocationOnIcon sx={{ fontSize: 16 }} />
+                    <Typography variant="caption">Floor {selectedWorkspace?.floor}</Typography>
+                </Box>
+                <Box display="flex" alignItems="center" gap={0.5} color="text.secondary">
+                    <PeopleIcon sx={{ fontSize: 16 }} />
+                    <Typography variant="caption">Seats {selectedWorkspace?.capacity}</Typography>
+                </Box>
               </Box>
+          </Box>
+          <Divider />
+          <DialogContent>
+             <Box display="flex" flexDirection="column" gap={3} mt={1}>
+              <DatePicker label="Date" value={bookingDate} onChange={setBookingDate} disablePast />
+              <TimePicker label="Start Time" value={startTime} onChange={setStartTime} />
+              <TimePicker label="End Time" value={endTime} onChange={setEndTime} />
             </Box>
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={handleCloseModal} color="inherit">Cancel</Button>
-            <Button onClick={handleBookSubmit} variant="contained" disableElevation>
-              Confirm Booking
-            </Button>
+          <DialogActions sx={{ p: 3 }}>
+            <Button onClick={() => setModalOpen(false)} color="inherit">Cancel</Button>
+            <Button onClick={handleBookSubmit} variant="contained" disableElevation sx={{ px: 4 }}>Confirm Reservation</Button>
           </DialogActions>
         </Dialog>
 
-        <Snackbar
-          open={!!feedbackMsg}
-          autoHideDuration={6000}
-          onClose={() => setFeedbackMsg(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={() => setFeedbackMsg(null)} severity={feedbackMsg?.type || 'info'} sx={{ width: '100%' }}>
+        <Snackbar open={!!feedbackMsg} autoHideDuration={4000} onClose={() => setFeedbackMsg(null)}>
+          <Alert severity={feedbackMsg?.type} variant="filled" sx={{ width: '100%', borderRadius: 2 }}>
             {feedbackMsg?.text}
           </Alert>
         </Snackbar>
-
       </Box>
     </LocalizationProvider>
   )
