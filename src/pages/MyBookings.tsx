@@ -19,7 +19,6 @@ interface Booking {
   status: string;
 }
 
-// NEW: We need to know what a workspace looks like to read its name
 interface Workspace {
   id: number;
   name: string;
@@ -33,7 +32,7 @@ interface MyToken {
 function MyBookings() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]); // NEW STATE
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [feedbackMsg, setFeedbackMsg] = useState<{type: 'success' | 'error', text: string} | null>(null);
@@ -54,7 +53,6 @@ function MyBookings() {
       headers: { Authorization: `Bearer ${token}` }
     };
 
-    // NEW: Fetch BOTH bookings and workspaces at the exact same time!
     Promise.all([
       axios.get<Booking[]>(`http://127.0.0.1:8000/api/bookings/user/${userId}/`, config),
       axios.get<Workspace[]>('http://127.0.0.1:8000/api/workspaces/')
@@ -96,7 +94,6 @@ function MyBookings() {
     navigate('/login');
   };
 
-  // NEW: Helper function to match the ID to the real workspace name
   const getWorkspaceName = (workspaceId: number) => {
     const workspace = workspaces.find(w => w.id === workspaceId);
     return workspace ? workspace.name : `Workspace #${workspaceId}`;
@@ -145,12 +142,11 @@ function MyBookings() {
         ) : (
           <Grid container spacing={3}>
             {bookings.map(booking => (
-              <Grid item xs={12} key={booking.id}>
+              <Grid size={{ xs: 12 }} key={booking.id}>
                 <Card elevation={2} sx={{ display: 'flex', flexDirection: 'column' }}>
                   <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                       <Typography variant="h6" fontWeight="bold">
-                        {/* WE USE OUR NEW HELPER FUNCTION HERE */}
                         {getWorkspaceName(booking.workspace)}
                       </Typography>
                       <Chip
@@ -161,17 +157,17 @@ function MyBookings() {
                       />
                     </Box>
                     <Grid container spacing={2}>
-                      <Grid item xs={12} sm={4}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
                         <Typography variant="body2" color="text.secondary">Date</Typography>
                         <Typography variant="body1">{booking.booking_date}</Typography>
                       </Grid>
-                      <Grid item xs={12} sm={4}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
                         <Typography variant="body2" color="text.secondary">Time</Typography>
                         <Typography variant="body1">
                           {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
                         </Typography>
                       </Grid>
-                      <Grid item xs={12} sm={4} display="flex" alignItems="center" justifyContent="flex-end">
+                      <Grid size={{ xs: 12, sm: 4 }} display="flex" alignItems="center" justifyContent="flex-end">
                         {booking.status === 'Confirmed' && (
                           <Button
                             variant="outlined"

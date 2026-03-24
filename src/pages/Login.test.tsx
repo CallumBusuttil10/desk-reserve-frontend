@@ -1,12 +1,12 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest'
 import axios from 'axios'
 import Login from './Login'
 
 // 1. Mock Axios so we don't hit the real network during tests
 vi.mock('axios')
-const mockedAxios = axios as jest.Mocked<typeof axios>
+const mockedAxios = axios as Mocked<typeof axios>
 
 // 2. Mock React Router's useNavigate hook to track if the user gets redirected
 const mockNavigate = vi.fn()
