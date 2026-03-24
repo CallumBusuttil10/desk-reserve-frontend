@@ -37,7 +37,7 @@ function Dashboard() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  // --- NEW: Search and Filter State ---
+  // Search and Filter State
   const [searchQuery, setSearchQuery] = useState('')
   const [resourceFilter, setResourceFilter] = useState('All')
 
@@ -113,11 +113,9 @@ function Dashboard() {
       })
   }
 
-  // --- NEW: Dynamic Filtering Logic ---
-  // 1. Get a unique list of resource types from the database for our dropdown
+  // Dynamic Filtering Logic
   const uniqueResourceTypes = ['All', ...Array.from(new Set(workspaces.map(w => w.resource_type)))];
 
-  // 2. Filter the workspaces based on what is typed in the search bar AND selected in the dropdown
   const filteredWorkspaces = workspaces.filter(workspace => {
     const matchesSearch = workspace.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = resourceFilter === 'All' || workspace.resource_type === resourceFilter;
@@ -148,6 +146,10 @@ function Dashboard() {
             </Typography>
             {token ? (
               <Box display="flex" alignItems="center" gap={2}>
+                {/* NEW: My Bookings Navigation Button */}
+                <Button color="inherit" onClick={() => navigate('/bookings')}>
+                  My Bookings
+                </Button>
                 <Typography variant="body2">Hello, {username}</Typography>
                 <Button color="inherit" onClick={handleLogout} variant="outlined">Logout</Button>
               </Box>
@@ -165,7 +167,7 @@ function Dashboard() {
             Select a desk or meeting room to view availability and book your slot.
           </Typography>
 
-          {/* --- NEW: Search and Filter Bar --- */}
+          {/* Search and Filter Bar */}
           <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
             <TextField
               label="Search by name..."
@@ -196,7 +198,6 @@ function Dashboard() {
             </TextField>
           </Box>
 
-          {/* If the filter results in 0 items, show a helpful message */}
           {filteredWorkspaces.length === 0 ? (
             <Box textAlign="center" py={5}>
               <Typography variant="h6" color="text.secondary">
@@ -205,7 +206,6 @@ function Dashboard() {
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {/* Notice we map over filteredWorkspaces now, not workspaces! */}
               {filteredWorkspaces.map(workspace => (
                 <Grid size={{ xs: 12, sm: 6, md: 4 }} key={workspace.id}>
                   <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
