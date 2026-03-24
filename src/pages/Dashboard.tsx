@@ -130,7 +130,9 @@ function Dashboard() {
               <Typography variant="h3" fontWeight="900" gutterBottom color="primary.main">Ready to work?</Typography>
               <Paper elevation={4} sx={{ p: 4, borderRadius: 3, width: '100%', maxWidth: '900px' }}>
                 <Grid container spacing={2} justifyContent="center" alignItems="center">
-                  <Grid item xs={12} md={4.5}>
+
+                  {/* FIXED: Using size object for modern MUI */}
+                  <Grid size={{ xs: 12, md: 5 }}>
                     <TextField select fullWidth label="Select Floor" value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value as any)}>
                       <MenuItem value="all">Any Floor</MenuItem>
                       <MenuItem value={1}>Floor 1</MenuItem>
@@ -139,7 +141,7 @@ function Dashboard() {
                       <MenuItem value={4}>Floor 4</MenuItem>
                     </TextField>
                   </Grid>
-                  <Grid item xs={12} md={4.5}>
+                  <Grid size={{ xs: 12, md: 4 }}>
                     <TextField select fullWidth label="Resource Type" value={resourceFilter} onChange={(e) => setResourceFilter(e.target.value)}>
                       <MenuItem value="All">All Types</MenuItem>
                       <MenuItem value="Desk">Desk</MenuItem>
@@ -147,9 +149,10 @@ function Dashboard() {
                       <MenuItem value="Boardroom">Boardroom</MenuItem>
                     </TextField>
                   </Grid>
-                  <Grid item xs={12} md={3}>
+                  <Grid size={{ xs: 12, md: 3 }}>
                     <Button fullWidth variant="contained" size="large" sx={{ height: 56, fontWeight: 'bold' }} onClick={() => setHasSearched(true)}>SEARCH</Button>
                   </Grid>
+
                 </Grid>
               </Paper>
             </Box>
@@ -161,7 +164,7 @@ function Dashboard() {
               </Box>
               <Grid container spacing={4}>
                 {filteredWorkspaces.map(workspace => (
-                  <Grid item xs={12} sm={6} md={3} key={workspace.id}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }} key={workspace.id}>
                     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4 }}>
                       <CardMedia component="img" height="200" image={getImageUrl(workspace)} sx={{ objectFit: 'cover' }} />
                       <CardContent sx={{ flexGrow: 1 }}>
