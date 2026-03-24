@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom'
 import {
   AppBar, Toolbar, Typography, Container, Grid, Card,
   CardContent, CardActions, Button, CircularProgress, Box, Chip,
-  Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert
+  Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert,
+  TextField, InputAdornment, MenuItem
 } from '@mui/material'
 import DeskIcon from '@mui/icons-material/Desk'
+import SearchIcon from '@mui/icons-material/Search'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -35,6 +37,11 @@ function Dashboard() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
+  // --- NEW: Search and Filter State ---
+  const [searchQuery, setSearchQuery] = useState('')
+  const [resourceFilter, setResourceFilter] = useState('All')
+
+  // Modal & Booking State
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [bookingDate, setBookingDate] = useState<Dayjs | null>(dayjs())
@@ -42,7 +49,6 @@ function Dashboard() {
   const [endTime, setEndTime] = useState<Dayjs | null>(dayjs().hour(17).minute(0))
   const [feedbackMsg, setFeedbackMsg] = useState<{type: 'success' | 'error', text: string} | null>(null)
 
-  // Check if user is logged in
   const token = localStorage.getItem('access_token');
   const username = localStorage.getItem('username');
 
@@ -84,7 +90,7 @@ function Dashboard() {
     const decodedToken = jwtDecode<MyToken>(token);
 
     const payload = {
-      user: decodedToken.user_id, // No more hardcoded ID!
+      user: decodedToken.user_id,
       workspace: selectedWorkspace.id,
       booking_date: bookingDate.format('YYYY-MM-DD'),
       start_time: startTime.format('HH:mm:ss'),
@@ -106,6 +112,17 @@ function Dashboard() {
         setFeedbackMsg({ type: 'error', text: errorText })
       })
   }
+
+  // --- NEW: Dynamic Filtering Logic ---
+  // 1. Get a unique list of resource types from the database for our dropdown
+  const uniqueResourceTypes = ['All', ...Array.from(new Set(workspaces.map(w => w.resource_type)))];
+
+  // 2. Filter the workspaces based on what is typed in the search bar AND selected in the dropdown
+  const filteredWorkspaces = workspaces.filter(workspace => {
+    const matchesSearch = workspace.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = resourceFilter === 'All' || workspace.resource_type === resourceFilter;
+    return matchesSearch && matchesType;
+  });
 
   if (loading) return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -144,47 +161,88 @@ function Dashboard() {
           <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="text.primary">
             Available Workspaces
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 4 }}>
+          <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
             Select a desk or meeting room to view availability and book your slot.
           </Typography>
 
-          <Grid container spacing={3}>
-            {workspaces.map(workspace => (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={workspace.id}>
-                <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                      <Typography variant="h6" component="h2" fontWeight="bold">
-                        {workspace.name}
+          {/* --- NEW: Search and Filter Bar --- */}
+          <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+            <TextField
+              label="Search by name..."
+              variant="outlined"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ flexGrow: 1, minWidth: '250px', bgcolor: 'white', borderRadius: 1 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              select
+              label="Resource Type"
+              value={resourceFilter}
+              onChange={(e) => setResourceFilter(e.target.value)}
+              sx={{ minWidth: '200px', bgcolor: 'white', borderRadius: 1 }}
+            >
+              {uniqueResourceTypes.map(type => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+
+          {/* If the filter results in 0 items, show a helpful message */}
+          {filteredWorkspaces.length === 0 ? (
+            <Box textAlign="center" py={5}>
+              <Typography variant="h6" color="text.secondary">
+                No workspaces match your search criteria.
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {/* Notice we map over filteredWorkspaces now, not workspaces! */}
+              {filteredWorkspaces.map(workspace => (
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={workspace.id}>
+                  <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                        <Typography variant="h6" component="h2" fontWeight="bold">
+                          {workspace.name}
+                        </Typography>
+                        {workspace.is_active ? (
+                          <Chip label="Available" color="success" size="small" />
+                        ) : (
+                          <Chip label="Offline" color="error" size="small" />
+                        )}
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" mb={1}>
+                        <strong>Type:</strong> {workspace.resource_type}
                       </Typography>
-                      {workspace.is_active ? (
-                        <Chip label="Available" color="success" size="small" />
-                      ) : (
-                        <Chip label="Offline" color="error" size="small" />
-                      )}
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" mb={1}>
-                      <strong>Type:</strong> {workspace.resource_type}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Capacity:</strong> {workspace.capacity} {workspace.capacity > 1 ? 'People' : 'Person'}
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ p: 2, pt: 0 }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      disabled={!workspace.is_active}
-                      disableElevation
-                      onClick={() => handleOpenModal(workspace)}
-                    >
-                      Book Resource
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Capacity:</strong> {workspace.capacity} {workspace.capacity > 1 ? 'People' : 'Person'}
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ p: 2, pt: 0 }}>
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        disabled={!workspace.is_active}
+                        disableElevation
+                        onClick={() => handleOpenModal(workspace)}
+                      >
+                        Book Resource
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
         </Container>
 
         <Dialog open={modalOpen} onClose={handleCloseModal} fullWidth maxWidth="sm">
