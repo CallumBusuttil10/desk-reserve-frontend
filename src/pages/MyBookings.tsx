@@ -3,16 +3,11 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import {
   AppBar, Toolbar, Typography, Container, Card,
-  CardContent, CardActions, Button, CircularProgress, Box, Chip,
-  Grid, CardMedia, Divider, IconButton, Alert, Snackbar,
+  CardContent, CardActions, Button, CircularProgress, Box,
+  Grid, CardMedia, IconButton, Alert, Snackbar,
   Paper
 } from '@mui/material'
-import CorporateFareIcon from '@mui/icons-material/CorporateFare'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
-import AccessTimeIcon from '@mui/icons-material/AccessTime'
-import LocationOnIcon from '@mui/icons-material/LocationOn'
-import dayjs from 'dayjs'
 
 interface Workspace {
   id: number;
@@ -49,8 +44,6 @@ function MyBookings() {
     const fetchData = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
-
-        // Fetch bookings and workspaces
         const [bookingsRes, workspacesRes] = await Promise.all([
           axios.get('http://127.0.0.1:8000/api/bookings/', config),
           axios.get('http://127.0.0.1:8000/api/workspaces/')
@@ -64,10 +57,6 @@ function MyBookings() {
         setBookings(enrichedBookings);
       } catch (err: any) {
         console.error("Error fetching bookings:", err);
-        if (err.response?.status === 401) {
-            localStorage.clear();
-            navigate('/login');
-        }
       } finally {
         setLoading(false);
       }
@@ -118,7 +107,7 @@ function MyBookings() {
         ) : (
           <Grid container spacing={3}>
             {bookings.map(booking => (
-              <Grid item xs={12} md={6} key={booking.id}>
+              <Grid xs={12} md={6} key={booking.id}>
                 <Card sx={{ display: 'flex', borderRadius: 4, height: '100%' }}>
                   <CardMedia
                     component="img"
@@ -129,9 +118,7 @@ function MyBookings() {
                     <CardContent>
                       <Typography variant="h6" fontWeight="bold">{booking.workspace_details?.name || 'Workspace'}</Typography>
                       <Typography variant="body2" color="text.secondary">Floor {booking.workspace_details?.floor}</Typography>
-                      <Divider sx={{ my: 1 }} />
-                      <Typography variant="body2"><strong>Date:</strong> {booking.booking_date}</Typography>
-                      <Typography variant="body2"><strong>Time:</strong> {booking.start_time.substring(0,5)} - {booking.end_time.substring(0,5)}</Typography>
+                      <Typography variant="body2">Date: {booking.booking_date}</Typography>
                     </CardContent>
                     <CardActions><Button color="error" size="small" onClick={() => handleCancel(booking.id)}>Cancel</Button></CardActions>
                   </Box>
