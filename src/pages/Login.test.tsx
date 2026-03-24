@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
-import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest'
+// THE FIX IS ON THIS NEXT LINE: Note the "type Mocked"
+import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest'
 import axios from 'axios'
 import Login from './Login'
 
