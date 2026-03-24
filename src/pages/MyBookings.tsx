@@ -107,7 +107,7 @@ function MyBookings() {
         ) : (
           <Grid container spacing={3}>
             {bookings.map(booking => (
-              <Grid xs={12} md={6} key={booking.id}>
+              <Grid item xs={12} md={6} key={booking.id}>
                 <Card sx={{ display: 'flex', borderRadius: 4, height: '100%' }}>
                   <CardMedia
                     component="img"
