@@ -1,73 +1,59 @@
-# React + TypeScript + Vite
+# DeskReserve - Frontend Interface
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+DeskReserve is an enterprise-grade desk and meeting room reservation system. This frontend application is built with React, TypeScript, and Vite, and connects to a secure Django REST Framework backend.
 
-Currently, two official plugins are available:
+## 🚀 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* **Core:** React 18, TypeScript, Vite
+* **Routing:** React Router v6
+* **Styling & UI:** Material-UI (MUI v6), Emotion
+* **State & Data Fetching:** React Hooks (`useState`, `useEffect`), Axios
+* **Forms & Dates:** `@mui/x-date-pickers`, `dayjs` (UK Locale)
+* **Security:** JSON Web Tokens (JWT), `jwt-decode`
+* **Testing:** Vitest, React Testing Library, Happy-DOM
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 💻 Local Setup Guide
 
-## Expanding the ESLint configuration
+Follow these steps to get the frontend development environment running on your local machine.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
+1. Ensure you have [Node.js](https://nodejs.org/) installed.
+2. Ensure the **DeskReserve Django Backend** is running locally on port `8000`.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Installation
+**Clone the repository and navigate into the directory:**
+   ```bash
+   git clone <your-repository-url>
+   cd desk-reserve-frontend
+```
+### Install dependencies:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+``` Bash
+    npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Start the development server:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```Bash
+npm run dev
+```
+### View the app:
+Open your browser and navigate to http://localhost:5173/.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+(Note: You will be redirected to the login page if you are not authenticated).
+
+## Running Tests
+This project uses Vitest for lightning-fast unit and component testing, paired with React Testing Library and Happy-DOM for browser simulation.
+
+### To run the test suite in watch mode:
+
+```Bash
+npx vitest
+```
+### To run the tests once (useful for CI/CD pipelines):
+
+```Bash
+npx vitest run
 ```
