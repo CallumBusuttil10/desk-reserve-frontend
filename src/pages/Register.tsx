@@ -1,35 +1,50 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Container, Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink } from '@mui/material';
 import DeskIcon from '@mui/icons-material/Desk';
 import axios from 'axios';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 
-function Login() {
+function Register() {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+    setIsLoading(true);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/token/', {
+      const response = await axios.post('http://127.0.0.1:8000/api/register/', {
         username: username,
+        email: email,
         password: password
       });
 
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
-      localStorage.setItem('username', username);
-
-      navigate('/');
-
-    } catch (err) {
-      console.error("Login failed:", err);
-      setError('Invalid username or password. Please try again.');
+      if (response.status === 201) {
+        setSuccess("Registration successful! Check your inbox for a welcome email.");
+        // Wait 2.5 seconds so they can read the success message, then route to login
+        setTimeout(() => {
+          navigate('/login');
+        }, 2500);
+      }
+    } catch (err: any) {
+      console.error("Registration failed:", err.response);
+      if (err.response && err.response.data) {
+        // Flatten Django's error object into a readable string (e.g., "Username already exists")
+        const errorMessages = Object.values(err.response.data).flat().join(' ');
+        setError(errorMessages || 'Registration failed. Please try again.');
+      } else {
+        setError('A network error occurred.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -45,12 +60,13 @@ function Login() {
           </Box>
 
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            Sign in to your account
+            Create an account
           </Typography>
 
           {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
+          {success && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{success}</Alert>}
 
-          <Box component="form" onSubmit={handleLogin} sx={{ width: '100%', mt: 2 }}>
+          <Box component="form" onSubmit={handleRegister} sx={{ width: '100%', mt: 2 }}>
             <TextField
               margin="normal"
               required
@@ -59,6 +75,15 @@ function Login() {
               autoFocus
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Email Address"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <TextField
               margin="normal"
@@ -76,16 +101,16 @@ function Login() {
               size="large"
               sx={{ mt: 4, mb: 2 }}
               disableElevation
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>
 
-            {/* NEW: Link to the registration page */}
             <Box textAlign="center" mt={2}>
               <Typography variant="body2">
-                Don't have an account?{' '}
-                <MuiLink component={RouterLink} to="/register" underline="hover">
-                  Sign up here
+                Already have an account?{' '}
+                <MuiLink component={RouterLink} to="/login" underline="hover">
+                  Sign in here
                 </MuiLink>
               </Typography>
             </Box>
@@ -96,4 +121,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Register;
