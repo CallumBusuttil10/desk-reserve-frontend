@@ -4,6 +4,8 @@ import DeskIcon from '@mui/icons-material/Desk';
 import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -17,7 +19,7 @@ function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/password-reset/', {
+      const response = await axios.post(`${API_BASE_URL}/api/password-reset/`, {
         email: email
       });
       setMessage(response.data.message || 'If an account exists, a reset link has been sent.');
