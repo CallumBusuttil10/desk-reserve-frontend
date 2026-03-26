@@ -69,18 +69,24 @@ function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+
+            <Box textAlign="right" mt={1}>
+              <MuiLink component={RouterLink} to="/forgot-password" variant="body2" underline="hover">
+                Forgot password?
+              </MuiLink>
+            </Box>
+
             <Button
               type="submit"
               fullWidth
               variant="contained"
               size="large"
-              sx={{ mt: 4, mb: 2 }}
+              sx={{ mt: 3, mb: 2 }}
               disableElevation
             >
               Sign In
             </Button>
 
-            {/* NEW: Link to the registration page */}
             <Box textAlign="center" mt={2}>
               <Typography variant="body2">
                 Don't have an account?{' '}
