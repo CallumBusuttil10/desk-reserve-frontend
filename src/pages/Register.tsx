@@ -4,6 +4,8 @@ import DeskIcon from '@mui/icons-material/Desk';
 import axios from 'axios';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 function Register() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -21,7 +23,7 @@ function Register() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/register/', {
+      const response = await axios.post(`${API_BASE_URL}/api/register/`, {
         username: username,
         email: email,
         password: password
@@ -29,7 +31,6 @@ function Register() {
 
       if (response.status === 201) {
         setSuccess("Registration successful! Check your inbox for a welcome email.");
-        // Wait 2.5 seconds so they can read the success message, then route to login
         setTimeout(() => {
           navigate('/login');
         }, 2500);
@@ -37,7 +38,6 @@ function Register() {
     } catch (err: any) {
       console.error("Registration failed:", err.response);
       if (err.response && err.response.data) {
-        // Flatten Django's error object into a readable string (e.g., "Username already exists")
         const errorMessages = Object.values(err.response.data).flat().join(' ');
         setError(errorMessages || 'Registration failed. Please try again.');
       } else {

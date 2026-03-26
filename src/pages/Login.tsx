@@ -4,6 +4,8 @@ import DeskIcon from '@mui/icons-material/Desk';
 import axios from 'axios';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +18,7 @@ function Login() {
     setError('');
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/token/', {
+      const response = await axios.post(`${API_BASE_URL}/api/token/`, {
         username: username,
         password: password
       });

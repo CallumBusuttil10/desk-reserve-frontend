@@ -33,6 +33,8 @@ interface MyToken {
   exp: number;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 function Dashboard() {
   const navigate = useNavigate();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
@@ -53,7 +55,7 @@ function Dashboard() {
   const username = localStorage.getItem('username');
 
   useEffect(() => {
-    axios.get<Workspace[]>('http://127.0.0.1:8000/api/workspaces/')
+    axios.get<Workspace[]>(`${API_BASE_URL}/api/workspaces/`)
       .then(response => {
         setWorkspaces(response.data)
         setLoading(false)
@@ -89,7 +91,8 @@ function Dashboard() {
       end_time: endTime.format('HH:mm:ss'),
       status: 'Confirmed'
     }
-    axios.post('http://127.0.0.1:8000/api/bookings/create/', payload, {
+
+    axios.post(`${API_BASE_URL}/api/bookings/create/`, payload, {
       headers: { Authorization: `Bearer ${token}` }
     }).then(() => {
         setFeedbackMsg({ type: 'success', text: 'Booking successful!' })
@@ -131,7 +134,6 @@ function Dashboard() {
               <Paper elevation={4} sx={{ p: 4, borderRadius: 3, width: '100%', maxWidth: '900px' }}>
                 <Grid container spacing={2} justifyContent="center" alignItems="center">
 
-                  {/* FIXED: Using size object for modern MUI */}
                   <Grid size={{ xs: 12, md: 5 }}>
                     <TextField select fullWidth label="Select Floor" value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value as any)}>
                       <MenuItem value="all">Any Floor</MenuItem>

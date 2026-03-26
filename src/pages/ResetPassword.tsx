@@ -4,6 +4,8 @@ import DeskIcon from '@mui/icons-material/Desk';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 function ResetPassword() {
   const { uid, token } = useParams<{ uid: string; token: string }>();
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ function ResetPassword() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/password-reset/confirm/', {
+      const response = await axios.post(`${API_BASE_URL}/api/password-reset/confirm/`, {
         uidb64: uid,
         token: token,
         new_password: newPassword

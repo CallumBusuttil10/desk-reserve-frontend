@@ -9,6 +9,8 @@ import {
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 interface Workspace {
   id: number;
   name: string;
@@ -45,8 +47,8 @@ function MyBookings() {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const [bookingsRes, workspacesRes] = await Promise.all([
-          axios.get('http://127.0.0.1:8000/api/bookings/', config),
-          axios.get('http://127.0.0.1:8000/api/workspaces/')
+          axios.get(`${API_BASE_URL}/api/bookings/`, config),
+          axios.get(`${API_BASE_URL}/api/workspaces/`)
         ]);
 
         const enrichedBookings = bookingsRes.data.map((booking: Booking) => ({
@@ -77,7 +79,7 @@ function MyBookings() {
 
   const handleCancel = (id: number) => {
     if (!window.confirm("Cancel this booking?")) return;
-    axios.delete(`http://127.0.0.1:8000/api/bookings/${id}/delete/`, {
+    axios.delete(`${API_BASE_URL}/api/bookings/${id}/delete/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(() => {
@@ -107,10 +109,7 @@ function MyBookings() {
         ) : (
           <Grid container spacing={3}>
             {bookings.map(booking => (
-
-              /* FIXED: Using size object for modern MUI */
               <Grid size={{ xs: 12, md: 6 }} key={booking.id}>
-
                 <Card sx={{ display: 'flex', borderRadius: 4, height: '100%' }}>
                   <CardMedia
                     component="img"
