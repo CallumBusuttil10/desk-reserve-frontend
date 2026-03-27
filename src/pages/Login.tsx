@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Container, Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink } from '@mui/material';
 import DeskIcon from '@mui/icons-material/Desk';
 import axios from 'axios';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -10,8 +10,6 @@ function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-
-  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +25,7 @@ function Login() {
       localStorage.setItem('refresh_token', response.data.refresh);
       localStorage.setItem('username', username);
 
-      navigate('/');
+      window.location.href = '/';
 
     } catch (err) {
       console.error("Login failed:", err);
