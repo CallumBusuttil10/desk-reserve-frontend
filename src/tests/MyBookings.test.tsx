@@ -24,8 +24,8 @@ describe('MyBookings Component', () => {
 
   it('1. fetches and displays user bookings', async () => {
     mockedAxios.get
-      .mockResolvedValueOnce({ data: mockBookings }) // First call is bookings
-      .mockResolvedValueOnce({ data: mockWorkspaces }) // Second call is workspaces
+      .mockResolvedValueOnce({ data: mockBookings })
+      .mockResolvedValueOnce({ data: mockWorkspaces })
 
     render(<BrowserRouter><MyBookings /></BrowserRouter>)
 

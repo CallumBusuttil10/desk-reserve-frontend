@@ -13,7 +13,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useParams: () => ({ uid: '123', token: 'abc' }) // Mocks the URL parameters
+    useParams: () => ({ uid: '123', token: 'abc' })
   }
 })
 
@@ -25,7 +25,6 @@ describe('ResetPassword Component', () => {
     fireEvent.change(screen.getByLabelText(/Confirm New Password/i), { target: { value: 'pass2' } })
     fireEvent.click(screen.getByRole('button', { name: /Reset Password/i }))
 
-    // API should not be called
     expect(mockedAxios.post).not.toHaveBeenCalled()
     expect(screen.getByText('Passwords do not match.')).toBeInTheDocument()
   })

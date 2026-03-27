@@ -31,10 +31,8 @@ describe('Dashboard Component', () => {
     mockedAxios.get.mockResolvedValueOnce({ data: mockWorkspaces })
     render(<BrowserRouter><Dashboard /></BrowserRouter>)
 
-    // Wait for the initial load to finish
     await waitFor(() => expect(screen.queryByRole('progressbar')).not.toBeInTheDocument())
 
-    // Click search to view results
     fireEvent.click(screen.getByRole('button', { name: /SEARCH/i }))
 
     await waitFor(() => {
