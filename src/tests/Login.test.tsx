@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { describe, it, expect, vi, beforeEach, type Mocked } from 'vitest'
 import axios from 'axios'
-import Login from './Login'
+import Login from '../pages/Login'
 
 vi.mock('axios')
 const mockedAxios = axios as Mocked<typeof axios>
