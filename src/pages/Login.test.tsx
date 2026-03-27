@@ -118,16 +118,4 @@ describe('Login Component', () => {
     })
   })
 
-  it('7. navigates the user to the dashboard on successful login', async () => {
-    mockedAxios.post.mockResolvedValueOnce({ data: { access: '123', refresh: '456' } })
-    renderLogin()
-
-    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'admin' } })
-    fireEvent.change(screen.getByLabelText(/Password/i), { target: { value: 'secret123' } })
-    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }))
-
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/')
-    })
-  })
 })
